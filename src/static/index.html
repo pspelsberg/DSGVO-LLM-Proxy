@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSGVO Privacy Gateway Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">🔒</div>
+                    <div class="logo-text">
+                        <span class="logo-title">DSGVO Gateway</span>
+                        <span class="logo-subtitle">LLM Privacy Shield</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-tab="playground">
+                    <span class="nav-icon">🧪</span> Playground
+                </a>
+                <a href="#" class="nav-item" data-tab="settings">
+                    <span class="nav-icon">⚙️</span> Einstellungen
+                </a>
+                <a href="#" class="nav-item" data-tab="logs">
+                    <span class="nav-icon">📜</span> Audit-Logs
+                </a>
+                <a href="#" class="nav-item" data-tab="docs">
+                    <span class="nav-icon">📚</span> API-Doku
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-label">Gateway Aktiv</span>
+                </div>
+                <div class="version">v1.0.0</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Navigation Bar -->
+            <header class="top-bar">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="top-bar-actions">
+                    <div class="gateway-mode-badge" id="global-mode-badge">
+                        Mock-Modus
+                    </div>
+                    <div class="gateway-provider-badge" id="global-provider-badge">
+                        mock
+                    </div>
+                </div>
+            </header>
+
+            <div class="tab-content active" id="tab-dashboard">
+                <!-- Quick Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon pink-bg">🔒</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Anfragen geschützt</span>
+                            <span class="stat-value" id="stats-total-requests">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green-bg">👁️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">PII maskiert</span>
+                            <span class="stat-value" id="stats-total-pii">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue-bg">⚡</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Ø Latenz (MS)</span>
+                            <span class="stat-value" id="stats-avg-latency">0ms</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple-bg">🛡️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Datenschutz-Score</span>
+                            <span class="stat-value" id="stats-privacy-score">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard Insights -->
+                <div class="dashboard-layout">
+                    <div class="card main-insights">
+                        <h2>System-Status &amp; Auswertung</h2>
+                        <p>Das DSGVO Privacy Gateway läuft lokal und schützt Ihre LLM-Kommunikation. Jede PII-Erkennung läuft vollständig auf Ihrem System, bevor Daten ins Internet gesendet werden.</p>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <h3>Unterstützte LLM-Provider</h3>
+                                <p>Mock LLM, OpenAI (GPT), Anthropic (Claude), Mistral AI, Google Gemini</p>
+                            </div>
+                            <div class="info-item">
+                                <h3>Aktive Sprachen</h3>
+                                <p>Deutsch (de_core_news_sm), Englisch (en_core_web_sm)</p>
+                            </div>
+                            <div class="info-item">
+                                <h3>Deutsche Custom Recognizers</h3>
+                                <p>Steuer-ID, Steuernummer, Kfz-Kennzeichen, deutsche Telefonnummern, IBAN, Personalausweis</p>
+                            </div>
+                            <div class="info-item">
+                                <h3>Speichermethode</h3>
+                                <p>Persistent über lokale SQLite Audit-Datenbank</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card entity-distribution">
+                        <h2>Häufigste PII-Kategorien</h2>
+                        <div class="chart-placeholder" id="category-chart">
+                            <!-- Render dynamic category progress bars here -->
+                            <p class="no-data-msg">Noch keine PII-Daten erfasst. Teste den Playground!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: PLAYGROUND -->
+            <div class="tab-content" id="tab-playground">
+                <div class="playground-container">
+                    <!-- Left: Request Composer -->
+                    <div class="card playground-left">
+                        <h2>Eingabe-Prompt</h2>
+                        <p class="subtitle">Gib einen Text mit persönlichen Daten ein, um die Live-Maskierung zu testen.</p>
+                        
+                        <div class="preset-buttons">
+                            <button class="btn btn-sm btn-outline" id="preset-de">Bsp. Deutsch</button>
+                            <button class="btn btn-sm btn-outline" id="preset-en">Bsp. Englisch</button>
+                        </div>
+
+                        <textarea id="playground-prompt" placeholder="Hallo, mein Name ist Max Mustermann. Meine E-Mail ist max.mustermann@mail.de und ich wohne in der Hauptstraße 12, 10117 Berlin. Meine Steuer-ID lautet 12345678901. Können Sie mir helfen?"></textarea>
+                        
+                        <div class="playground-actions">
+                            <div class="language-select">
+                                <label for="playground-lang">Erkennungs-Sprache:</label>
+                                <select id="playground-lang">
+                                    <option value="de">Deutsch</option>
+                                    <option value="en">Englisch</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="btn-submit-playground">Anfrage Senden</button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Execution Flow Visualizer -->
+                    <div class="card playground-right">
+                        <h2>Visualisierter Gateway-Ablauf</h2>
+                        
+                        <div class="flow-tabs">
+                            <button class="flow-tab active" data-flow="highlight">1. PII Highlights</button>
+                            <button class="flow-tab" data-flow="anonymized">2. Maskierter Prompt</button>
+                            <button class="flow-tab" data-flow="response">3. LLM Antwort</button>
+                            <button class="flow-tab" data-flow="deanonymized">4. De-Anonymisiert</button>
+                        </div>
+
+                        <div class="flow-viewport">
+                            <!-- Flow View: Highlight -->
+                            <div class="flow-panel active" id="flow-panel-highlight">
+                                <div class="highlight-container" id="playground-highlighted-view">
+                                    <span class="placeholder-text">Hier wird die PII-Erkennung live visualisiert...</span>
+                                </div>
+                                <div class="detected-legend" id="detected-legend-container">
+                                    <!-- Dynamic badges legend -->
+                                </div>
+                            </div>
+
+                            <!-- Flow View: Anonymized -->
+                            <div class="flow-panel" id="flow-panel-anonymized">
+                                <div class="code-box-header">
+                                    <span>Payload an LLM API</span>
+                                    <button class="copy-btn" data-target="anonymized-text-content">Kopieren</button>
+                                </div>
+                                <pre><code id="anonymized-text-content" class="language-text">Der maskierte Prompt wird nach Absenden hier angezeigt.</code></pre>
+                            </div>
+
+                            <!-- Flow View: Response -->
+                            <div class="flow-panel" id="flow-panel-response">
+                                <div class="code-box-header">
+                                    <span>Raw Response vom LLM (Maskiert)</span>
+                                </div>
+                                <pre><code id="response-text-content" class="language-text">Die LLM-Antwort mit Platzhaltern erscheint hier nach Absenden.</code></pre>
+                            </div>
+
+                            <!-- Flow View: Deanonymized -->
+                            <div class="flow-panel" id="flow-panel-deanonymized">
+                                <div class="code-box-header">
+                                    <span>Sichere Antwort an Client (De-anonymisiert)</span>
+                                </div>
+                                <div class="deanonymized-output-view" id="deanonymized-text-content">
+                                    Die de-anonymisierte Antwort (mit echten Daten) erscheint hier nach Absenden.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SETTINGS -->
+            <div class="tab-content" id="tab-settings">
+                <div class="settings-grid">
+                    <!-- Left Settings Column -->
+                    <div class="card settings-left">
+                        <h2>Gateway Konfiguration</h2>
+                        <p class="subtitle">Passe das Verhalten der Erkennung und die LLM-Anbindung an.</p>
+                        
+                        <form id="settings-form">
+                            <!-- LLM Routing Settings -->
+                            <div class="settings-section">
+                                <h3>LLM Provider &amp; Modell</h3>
+                                
+                                <div class="form-group">
+                                    <label class="switch-container">
+                                        <input type="checkbox" id="settings-mock-mode" checked>
+                                        <span class="slider"></span>
+                                        <span class="switch-label"><strong>Mock-Modus aktivieren</strong> (lokale Demo ohne API-Key)</span>
+                                    </label>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="settings-provider">LLM Provider</label>
+                                        <select id="settings-provider">
+                                            <!-- Dynamically populated -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="settings-model">Modellname</label>
+                                        <input type="text" id="settings-model" placeholder="gpt-4o">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sensitivity Settings -->
+                            <div class="settings-section">
+                                <h3>Erkennungs-Schwellenwert (Threshold)</h3>
+                                <p class="subtitle">Niedrigere Werte maskieren aggressiver (mehr False Positives). Höhere Werte filtern präziser (Gefahr von False Negatives).</p>
+                                <div class="range-container">
+                                    <input type="range" id="settings-threshold" min="0.1" max="0.9" step="0.05" value="0.35">
+                                    <span class="range-value" id="threshold-val-label">0.35</span>
+                                </div>
+                            </div>
+
+                            <!-- Context & Performance Settings -->
+                            <div class="settings-section">
+                                <h3>Kontext &amp; Performance</h3>
+                                <p class="subtitle">Konfiguriere das Text-Chunking und Sliding-Window-Verhalten für sehr große Eingaben.</p>
+                                
+                                <div class="form-row" style="margin-bottom: 12px; display: flex; gap: 20px;">
+                                    <div class="form-group" style="flex: 1; display: flex; align-items: center;">
+                                        <label class="switch-container">
+                                            <input type="checkbox" id="settings-chunking-enabled" checked>
+                                            <span class="slider"></span>
+                                            <span class="switch-label"><strong>Segmentierung (Chunking)</strong></span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="settings-chunk-size">Segmentgröße (Zeichen)</label>
+                                        <input type="number" id="settings-chunk-size" value="4000" min="500" max="10000" step="100" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: #fff;">
+                                    </div>
+                                </div>
+
+                                <div class="form-row" style="display: flex; gap: 20px;">
+                                    <div class="form-group" style="flex: 1; display: flex; align-items: center;">
+                                        <label class="switch-container">
+                                            <input type="checkbox" id="settings-sliding-window-enabled" checked>
+                                            <span class="slider"></span>
+                                            <span class="switch-label"><strong>Sliding Window</strong></span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="settings-max-context-tokens">Max. Kontext-Token</label>
+                                        <input type="number" id="settings-max-context-tokens" value="12000" min="1000" max="100000" step="500" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: #fff;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Compliance & Safe Logging -->
+                            <div class="settings-section">
+                                <h3>Compliance &amp; Logging</h3>
+                                <div class="form-group">
+                                    <label class="switch-container">
+                                        <input type="checkbox" id="settings-safe-logging">
+                                        <span class="slider"></span>
+                                        <span class="switch-label"><strong>Sicheres Logging (Safe Logging)</strong> (kein Speichern der Prompt-Texte in der DB)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Whitelist & Blacklist -->
+                            <div class="settings-section">
+                                <h3>Whitelist &amp; Blacklist</h3>
+                                <p class="subtitle">Eigene Begriffe zur Filterung hinzufügen (jeweils kommagetrennt).</p>
+                                <div class="form-group">
+                                    <label for="settings-whitelist">Whitelist (erlaubte Wörter - werden nie maskiert)</label>
+                                    <input type="text" id="settings-whitelist" placeholder="z.B. Google, MeinUnternehmen">
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-blacklist">Blacklist (Sperrbegriffe - werden immer maskiert)</label>
+                                    <input type="text" id="settings-blacklist" placeholder="z.B. Geheimprojekt, Geheimcode">
+                                </div>
+                            </div>
+
+                            <!-- API Key Vault -->
+                            <div class="settings-section">
+                                <h3>API-Schlüssel-Tresor (Vault)</h3>
+                                <p class="subtitle">Hier hinterlegte Schlüssel überschreiben die .env-Dateien.</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="key-openai">OpenAI API-Key</label>
+                                        <input type="password" id="key-openai" class="api-key-input" placeholder="sk-proj-...">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="key-anthropic">Anthropic API-Key</label>
+                                        <input type="password" id="key-anthropic" class="api-key-input" placeholder="sk-ant-...">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="key-mistral">Mistral API-Key</label>
+                                        <input type="password" id="key-mistral" class="api-key-input" placeholder="Mistral API-Schlüssel">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="key-gemini">Gemini API-Key</label>
+                                        <input type="password" id="key-gemini" class="api-key-input" placeholder="Gemini API-Schlüssel">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="key-openrouter">OpenRouter API-Key</label>
+                                        <input type="password" id="key-openrouter" class="api-key-input" placeholder="sk-or-v1-...">
+                                    </div>
+                                    <div class="form-group">
+                                        <!-- Spacer for alignment -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="btn-save-settings">Einstellungen Speichern</button>
+                        </form>
+                    </div>
+
+                    <!-- Right Settings Column (Toggles for entities) -->
+                    <div class="card settings-right">
+                        <h2>Aktive PII-Kategorien</h2>
+                        <p class="subtitle">Wähle aus, welche personenbezogenen Daten maskiert werden sollen.</p>
+                        
+                        <div class="entities-toggle-list" id="entities-toggle-container">
+                            <!-- Dynamic Entity checkboxes populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: AUDIT LOGS -->
+            <div class="tab-content" id="tab-logs">
+                <div class="card logs-card">
+                    <div class="logs-header">
+                        <h2>Audit-Logs &amp; Transaktionsverlauf</h2>
+                        <button class="btn btn-sm btn-danger" id="btn-clear-logs">Logs leeren</button>
+                    </div>
+                    <p class="subtitle">Hier werden alle Transaktionen protokolliert. Keine sensiblen Originaldaten verlassen Ihren PC; die Daten werden lokal in SQLite gespeichert.</p>
+                    
+                    <div class="logs-table-container">
+                        <table class="logs-table" id="audit-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Zeitstempel</th>
+                                    <th>Provider</th>
+                                    <th>Maskiert</th>
+                                    <th>Datenschutz</th>
+                                    <th>Latenz</th>
+                                    <th>Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-logs-body">
+                                <tr>
+                                    <td colspan="7" class="text-center">Keine Logs vorhanden.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: API DOCS -->
+            <div class="tab-content" id="tab-docs">
+                <div class="card docs-card">
+                    <h2>Integration &amp; API Nutzung</h2>
+                    <p>Das DSGVO Privacy Gateway ist als Drop-In Proxy konzipiert. Du kannst deine bestehenden Anwendungen (z.B. LangChain, OpenAI SDK, LlamaIndex) einfach auf dieses Gateway umleiten.</p>
+                    
+                    <div class="docs-section">
+                        <h3>1. OpenAI SDK (Python)</h3>
+                        <p>Ändere einfach den <code>base_url</code> Parameter im OpenAI Client. Der Proxy maskiert automatisch den Prompt und de-anonymisiert die Antwort im Rückkanal.</p>
+                        <pre><code class="language-python">from openai import OpenAI
+
+# Verbinde zum lokalen DSGVO-Proxy statt direkt zu OpenAI
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="Dein-OpenAI-API-Key"  # Wird an OpenAI weitergereicht
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Mein Name ist Max und ich wohne in München."}
+    ]
+)
+
+print(response.choices[0].message.content)
+# Ausgabe: "Hallo Max! Wie kann ich dir in München helfen?"
+# Hinweis: Das OpenAI-Modell sah nur: "Mein Name ist <PERSON_0> und ich wohne in <LOCATION_0>."
+</code></pre>
+                    </div>
+
+                    <div class="docs-section">
+                        <h3>2. cURL Request</h3>
+                        <p>Das Gateway verhält sich exakt wie die OpenAI API v1.</p>
+                        <pre><code class="language-bash">curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "user", "content": "Rückmeldung für Herrn Albert Einstein (albert@einstein.org)."}
+    ]
+  }'
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for viewing log details -->
+    <div class="modal" id="log-detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Transaktions-Details</h3>
+                <span class="close-modal" id="close-log-modal">&times;</span>
+            </div>
+            <div class="modal-body" id="log-modal-body">
+                <!-- Log detail dynamic contents -->
+            </div>
+        </div>
+    </div>
+
+    <!-- App Logic Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
