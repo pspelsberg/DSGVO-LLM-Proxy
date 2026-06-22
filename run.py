@@ -7,7 +7,10 @@ venv_python = os.path.join("venv", "Scripts", "python.exe") if sys.platform == "
 
 if os.path.exists(venv_python) and sys.executable != os.path.abspath(venv_python):
     print("Restarting server inside the virtual environment...")
-    subprocess.call([venv_python] + sys.argv)
+    try:
+        subprocess.call([venv_python] + sys.argv)
+    except KeyboardInterrupt:
+        pass
     sys.exit()
 
 import uvicorn
@@ -20,9 +23,13 @@ if __name__ == "__main__":
     print("=" * 60)
     
     # Run Uvicorn server
-    uvicorn.run(
-        "src.main:app",
-        host=HOST,
-        port=PORT,
-        reload=True
-    )
+    try:
+        uvicorn.run(
+            "src.main:app",
+            host=HOST,
+            port=PORT,
+            reload=True
+        )
+    except KeyboardInterrupt:
+        pass
+

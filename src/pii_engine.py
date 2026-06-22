@@ -95,10 +95,27 @@ class PIIEngine:
         # Initialize hash salt securely – required for deterministic pseudonymization
         hash_salt_str = os.getenv("PII_HASH_SALT")
         if not hash_salt_str:
-            import secrets
-            hash_salt_str = secrets.token_hex(32)
-            logger.warning("Environment variable PII_HASH_SALT is not set. Generated a secure temporary fallback salt for this session.")
+            # Fallback to persistent key file to maintain consistency across restarts
+            from src.config import BASE_DIR
+            salt_file = BASE_DIR / ".gateway_hash_salt.key"
+            if salt_file.exists():
+                try:
+                    with open(salt_file, "r") as f:
+                        hash_salt_str = f.read().strip()
+                except Exception as e:
+                    logger.error(f"Failed to read hash salt from file: {e}")
+            
+            if not hash_salt_str:
+                import secrets
+                hash_salt_str = secrets.token_hex(32)
+                try:
+                    with open(salt_file, "w") as f:
+                        f.write(hash_salt_str)
+                    logger.warning(f"Environment variable PII_HASH_SALT is not set. Generated a persistent fallback salt in {salt_file}.")
+                except Exception as e:
+                    logger.warning(f"Environment variable PII_HASH_SALT is not set. Generated a temporary fallback salt. Error writing file: {e}")
         self._hash_salt_str = hash_salt_str
+
         
         self._initialize_engines()
 

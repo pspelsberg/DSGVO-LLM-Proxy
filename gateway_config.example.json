@@ -1,0 +1,27 @@
+{
+  "active_entities": [
+    "PERSON"
+  ],
+  "threshold": 0.35,
+  "mock_mode": true,
+  "provider": "mock",
+  "model_name": "gpt-4o",
+  "whitelist": [],
+  "blacklist": [],
+  "entity_strategies": {
+    "PERSON": "faker"
+  },
+  "api_keys": {
+    "openai": "",
+    "anthropic": "",
+    "mistral": "",
+    "gemini": "",
+    "openrouter": ""
+  },
+  "safe_logging_mode": false,
+  "chunking_enabled": true,
+  "chunk_size": 4000,
+  "sliding_window_enabled": true,
+  "max_context_tokens": 12000,
+  "agents": []
+}

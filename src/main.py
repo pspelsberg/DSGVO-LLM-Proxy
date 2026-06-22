@@ -98,6 +98,7 @@ import time
 from fastapi.responses import JSONResponse
 request_counts = {}
 last_prune_time = 0.0
+MAX_IP_TRACKED = 2000
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
@@ -105,8 +106,8 @@ async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     current_time = time.time()
     
-    # Periodic pruning of the dictionary to prevent memory exhaustion (every 5 minutes or if size > 1000)
-    if current_time - last_prune_time > 300 or len(request_counts) > 1000:
+    # Periodic pruning of the dictionary to prevent memory exhaustion (every 5 minutes or if size > MAX_IP_TRACKED)
+    if current_time - last_prune_time > 300 or len(request_counts) > MAX_IP_TRACKED:
         ips_to_delete = [
             ip for ip, times in request_counts.items()
             if not times or current_time - times[-1] >= 60
@@ -116,6 +117,9 @@ async def rate_limit_middleware(request: Request, call_next):
         last_prune_time = current_time
     
     if client_ip not in request_counts:
+        # Enforce hard limit to prevent memory exhaustion
+        if len(request_counts) >= MAX_IP_TRACKED:
+            return JSONResponse(status_code=429, content={"detail": "Too many requests - system overloaded"})
         request_counts[client_ip] = []
         
     # Clean up old requests
@@ -126,6 +130,7 @@ async def rate_limit_middleware(request: Request, call_next):
         
     request_counts[client_ip].append(current_time)
     return await call_next(request)
+
 
 # Register routers
 app.include_router(playground_router.router)
