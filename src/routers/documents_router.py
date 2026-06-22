@@ -176,6 +176,8 @@ async def rag_chat(
             combined_mapping[k] = v
             
     context_str = "\n\n".join(context_parts)
+    # Prevent Prompt Injection by sanitizing closing context tags
+    context_str = context_str.replace("</context>", "< /context>")
     
     # 4. Construct prompts and proxy to LLM via Gateway
     system_prompt = (

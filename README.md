@@ -1,4 +1,4 @@
-# DSGVO Privacy Gateway for LLMs (v0.1)
+# DSGVO Privacy Gateway for LLMs
 
 A FastAPI-based, privacy-compliant proxy gateway that detects and masks Personally Identifiable Information (PII) in prompts before they are sent to public LLM APIs (like OpenAI, Anthropic, Mistral, Google Gemini, or OpenRouter), and automatically de-anonymizes the responses on the way back.
 

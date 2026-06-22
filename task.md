@@ -1,0 +1,59 @@
+# DSGVO Privacy Gateway Tasks
+
+- [x] **Setup & Dependency Installation**
+  - [x] Create python virtual environment (`venv`)
+  - [x] Write `requirements.txt`
+  - [x] Install pip dependencies
+  - [x] Download SpaCy models (`en_core_web_sm`, `de_core_news_sm`)
+- [x] **Core Configuration & Models**
+  - [x] Create `src/config.py` (API keys, provider URLs, threshold settings)
+  - [x] Create `src/models.py` (Pydantic models for API and configurations)
+- [x] **PII Engine & German Recognizers**
+  - [x] Initialize Presidio Analyzer and Anonymizer with English and German SpaCy models
+  - [x] Implement and register Custom German Recognizers:
+    - [x] German Tax ID (Steueridentifikationsnummer)
+    - [x] German Tax Number (Steuernummer)
+    - [x] German IBAN
+    - [x] German License Plate (Kfz-Kennzeichen)
+    - [x] German Identity Card (Personalausweisnummer)
+    - [x] German Phone Numbers
+- [x] **Proxy & Gateway Middleware**
+  - [x] Implement placeholder tracking & mapping context (bidirectional mapping)
+  - [x] Implement proxy logic for `/v1/chat/completions` supporting:
+    - [x] Mock LLM Mode (default response containing placeholder substitutions)
+    - [x] OpenAI API Integration
+    - [x] Anthropic Claude API Integration
+    - [x] Mistral API Integration
+    - [x] Google Gemini API Integration
+- [x] **Database & Log System**
+  - [x] Setup SQLite database for persistent logging
+  - [x] Create audit logger component in `src/utils/logger.py`
+- [x] **FastAPI Backend Services**
+  - [x] Create FastAPI app in `src/main.py`
+  - [x] Implement endpoints:
+    - [x] `/api/analyze` (detect PII live and return entities with scores/ranges)
+    - [x] `/api/config` (get/set gateway settings, toggle recognizers)
+    - [x] `/api/logs` (retrieve SQLite audit log history)
+  - [x] Create startup script `run.py` to check env, download models, and run server
+- [x] **Sleek Web Interface (Glassmorphic Dark Theme)**
+  - [x] Create HTML structure (`src/static/index.html`) with sidebar tabs
+  - [x] Build CSS styling (`src/static/app.css`) with glassmorphism and HSL colors
+  - [x] Implement Javascript UI logic (`src/static/app.js`):
+    - [x] Real-time highlighter in playground displaying PII entity badges
+    - [x] Settings manager to toggle active PII categories
+    - [x] Audit logs viewer with data visualizer
+    - [x] API documentation code snippets generator
+- [x] **Testing & Verification**
+  - [x] Create unit tests in `tests/test_pii_engine.py`
+  - [x] Create integration tests in `tests/test_api.py`
+  - [x] Run test suite with `pytest`
+  - [ ] Perform manual verification in the browser
+- [x] **V2: Enterprise Extensions**
+  - [x] Bugfix: Resolving `ResponseValidationError` in `AuditLogItem` Pydantic model
+  - [x] Secure API Key Vault: Implement symmetric Fernet encryption with local key storage
+  - [x] Whitelist & Blacklist filtering in PII engine
+  - [x] Per-category masking strategies (Placeholder, Redact, Hash, Faker)
+  - [x] API Key Vault UI & config resolution
+  - [x] Safe-Logging Compliance Mode in logger utility
+  - [x] Web Dashboard UI extensions
+  - [x] V2 automated unit and integration tests

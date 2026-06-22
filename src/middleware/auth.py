@@ -59,11 +59,18 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
             except Exception as e:
                 logger.error(f"Error checking agent keys: {e}")
                 
-        if not is_global_key and not matched_agent_id:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Unauthorized: Invalid or missing API key."}
-            )
+        if not is_global_key:
+            if not matched_agent_id:
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Unauthorized: Invalid or missing API key."}
+                )
+            # Restrict agents to proxy and RAG endpoints
+            if not (path.startswith("/v1/chat/completions") or path.startswith("/api/rag/chat")):
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "Forbidden: Agents cannot access administrative endpoints."}
+                )
             
         request.state.agent_id = matched_agent_id
         return await call_next(request)

@@ -95,7 +95,9 @@ class PIIEngine:
         # Initialize hash salt securely – required for deterministic pseudonymization
         hash_salt_str = os.getenv("PII_HASH_SALT")
         if not hash_salt_str:
-            logger.warning("Environment variable PII_HASH_SALT is not set. 'hash' strategy will fail if used.")
+            import secrets
+            hash_salt_str = secrets.token_hex(32)
+            logger.warning("Environment variable PII_HASH_SALT is not set. Generated a secure temporary fallback salt for this session.")
         self._hash_salt_str = hash_salt_str
         
         self._initialize_engines()

@@ -42,43 +42,30 @@ class Gateway:
         Main entry point for proxying `/v1/chat/completions`.
         Anonymizes prompts, calls the LLM (or mock), deanonymizes response, logs to DB, and returns OpenAI-style response.
         """
-        actual_limit = global_token_limit if global_token_limit is not None else self.global_token_limit
-        async with self._token_lock:
-            if actual_limit is not None and self.global_token_count >= actual_limit:
-                return {"error": {"message": f"Global token limit of {actual_limit} exceeded (used: {self.global_token_count}).", "type": "quota_exceeded_error"}}, 429
-                
-            if agent_id and agents_config:
-                agent_cfg = next((a for a in agents_config if a.get("id") == agent_id), None)
-                if agent_cfg and agent_cfg.get("token_limit"):
-                    agent_limit = agent_cfg["token_limit"]
-                    agent_used = self.agent_token_counts.get(agent_id, 0)
-                    if agent_used >= agent_limit:
-                        return {"error": {"message": f"Agent '{agent_cfg.get('name', agent_id)}' token limit of {agent_limit} exceeded (used: {agent_used}).", "type": "quota_exceeded_error"}}, 429
+        # 1. Extract messages
+        messages = request_body.get("messages", [])
+        if not messages:
+            return {"error": {"message": "No messages provided", "type": "invalid_request_error"}}, 400
+            
+        def estimate_tokens(msgs):
+            total_len = 0
+            for m in msgs:
+                content = m.get("content")
+                if isinstance(content, str):
+                    total_len += len(content)
+                elif isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict) and item.get("type") == "text" and isinstance(item.get("text"), str):
+                            total_len += len(item.get("text", ""))
+            return total_len // 4
 
         start_time = time.time()
         
         # Deep copy to prevent in-place mutation of the caller's dict
         request_body = copy.deepcopy(request_body)
         
-        # 1. Extract messages
-        messages = request_body.get("messages", [])
-        if not messages:
-            return {"error": {"message": "No messages provided", "type": "invalid_request_error"}}, 400
-        # Apply Sliding Window Context Limit (estimate tokens as character length / 4)
         if sliding_window_enabled:
             MAX_CONTEXT_TOKENS = max_context_tokens
-            
-            def estimate_tokens(msgs):
-                total_len = 0
-                for m in msgs:
-                    content = m.get("content")
-                    if isinstance(content, str):
-                        total_len += len(content)
-                    elif isinstance(content, list):
-                        for item in content:
-                            if isinstance(item, dict) and item.get("type") == "text" and isinstance(item.get("text"), str):
-                                total_len += len(item.get("text", ""))
-                return total_len // 4
                 
             system_msg = None
             chat_messages = []
@@ -103,6 +90,29 @@ class Gateway:
             chat_messages = chat_messages[start_idx:]
             messages = [system_msg] + chat_messages if system_msg else chat_messages
             request_body["messages"] = messages
+            
+        # Token Reservation (Fix for CWE-367 Race Condition)
+        estimated_input = estimate_tokens(messages)
+        expected_output = request_body.get("max_tokens", 1000)
+        reserved_tokens = estimated_input + expected_output
+        
+        actual_limit = global_token_limit if global_token_limit is not None else self.global_token_limit
+        async with self._token_lock:
+            if actual_limit is not None and (self.global_token_count + reserved_tokens) > actual_limit:
+                return {"error": {"message": f"Global token limit of {actual_limit} exceeded.", "type": "quota_exceeded_error"}}, 429
+                
+            if agent_id and agents_config:
+                agent_cfg = next((a for a in agents_config if a.get("id") == agent_id), None)
+                if agent_cfg and agent_cfg.get("token_limit"):
+                    agent_limit = agent_cfg["token_limit"]
+                    agent_used = self.agent_token_counts.get(agent_id, 0)
+                    if (agent_used + reserved_tokens) > agent_limit:
+                        return {"error": {"message": f"Agent '{agent_cfg.get('name', agent_id)}' token limit of {agent_limit} exceeded.", "type": "quota_exceeded_error"}}, 429
+            
+            # Reserve tokens proactively
+            self.global_token_count += reserved_tokens
+            if agent_id:
+                self.agent_token_counts[agent_id] = self.agent_token_counts.get(agent_id, 0) + reserved_tokens
         
         # 2. Analyze & Anonymize all user messages in the thread to prevent history leaks
         mapping = {}
@@ -184,6 +194,10 @@ class Gateway:
                 error_status = 502
 
         if error_response:
+            async with self._token_lock:
+                self.global_token_count -= reserved_tokens
+                if agent_id:
+                    self.agent_token_counts[agent_id] = self.agent_token_counts.get(agent_id, 0) - reserved_tokens
             return error_response, error_status
 
         # 4. Deanonymize LLM response
@@ -193,15 +207,16 @@ class Gateway:
         modified_response = self._inject_response_text(response_payload, deanonymized_response_text, provider)
         
         # 6. Global Token Counter Update (Input, Output, Reasoning Tokens)
+        total = 0
         if "usage" in modified_response:
             usage = modified_response["usage"]
             # total_tokens generally includes input (prompt) + output (completion including reasoning)
             total = usage.get("total_tokens", usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0))
-            async with self._token_lock:
-                self.global_token_count += total
-                
-                if agent_id:
-                    self.agent_token_counts[agent_id] = self.agent_token_counts.get(agent_id, 0) + total
+            
+        async with self._token_lock:
+            self.global_token_count = self.global_token_count - reserved_tokens + total
+            if agent_id:
+                self.agent_token_counts[agent_id] = self.agent_token_counts.get(agent_id, 0) - reserved_tokens + total
         
         # 7. Log transaction to database
         latency_ms = int((time.time() - start_time) * 1000)

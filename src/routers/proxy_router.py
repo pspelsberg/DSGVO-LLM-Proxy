@@ -22,12 +22,15 @@ async def chat_completions_proxy(
     """
     try:
         try:
-            # Prevent DoS by limiting request body size to 5MB
-            content_length = request.headers.get('content-length')
-            if content_length and int(content_length) > 5 * 1024 * 1024:
-                raise HTTPException(status_code=413, detail="Payload too large")
+            # Prevent DoS by limiting request body size to 5MB while streaming
+            body_bytes = b""
+            async for chunk in request.stream():
+                body_bytes += chunk
+                if len(body_bytes) > 5 * 1024 * 1024:
+                    raise HTTPException(status_code=413, detail="Payload too large")
             # Parse body as JSON dict
-            body = await request.json()
+            import json
+            body = json.loads(body_bytes)
         except HTTPException:
             raise
         except Exception:
