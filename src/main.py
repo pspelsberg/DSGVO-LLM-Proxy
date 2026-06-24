@@ -64,11 +64,19 @@ async def lifespan(app: FastAPI):
     finally:
         await http_client.aclose()
 
+gateway_env = os.getenv("GATEWAY_ENV", "development").lower()
+docs_url = "/docs" if gateway_env != "production" else None
+redoc_url = "/redoc" if gateway_env != "production" else None
+openapi_url = "/openapi.json" if gateway_env != "production" else None
+
 app = FastAPI(
     title="DSGVO LLM Privacy Gateway",
     description="Ein sicheres Proxy-Gateway zum Erkennen und Maskieren von PII vor der Übertragung an LLMs.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
 )
 
 # CORS configuration – restrict to configured origins (comma-separated via env)
@@ -103,7 +111,11 @@ MAX_IP_TRACKED = 2000
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     global last_prune_time
-    client_ip = request.client.host if request.client else "unknown"
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
     current_time = time.time()
     
     # Periodic pruning of the dictionary to prevent memory exhaustion (every 5 minutes or if size > MAX_IP_TRACKED)

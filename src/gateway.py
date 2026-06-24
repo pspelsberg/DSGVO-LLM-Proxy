@@ -93,7 +93,11 @@ class Gateway:
             
         # Token Reservation (Fix for CWE-367 Race Condition)
         estimated_input = estimate_tokens(messages)
-        expected_output = request_body.get("max_tokens", 1000)
+        raw_max_tokens = request_body.get("max_tokens")
+        try:
+            expected_output = int(raw_max_tokens) if (raw_max_tokens is not None and int(raw_max_tokens) > 0) else 1000
+        except (ValueError, TypeError):
+            expected_output = 1000
         reserved_tokens = estimated_input + expected_output
         
         actual_limit = global_token_limit if global_token_limit is not None else self.global_token_limit

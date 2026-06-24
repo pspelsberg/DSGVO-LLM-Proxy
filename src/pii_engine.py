@@ -109,7 +109,10 @@ class PIIEngine:
                 import secrets
                 hash_salt_str = secrets.token_hex(32)
                 try:
-                    with open(salt_file, "w") as f:
+                    # Use os.open to set file permission to 0600 on creation
+                    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+                    fd = os.open(str(salt_file), flags, 0o600)
+                    with os.fdopen(fd, "w") as f:
                         f.write(hash_salt_str)
                     logger.warning(f"Environment variable PII_HASH_SALT is not set. Generated a persistent fallback salt in {salt_file}.")
                 except Exception as e:

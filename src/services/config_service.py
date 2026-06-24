@@ -1,5 +1,8 @@
 import json
 import logging
+import os
+import tempfile
+import threading
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from src.config import (
@@ -20,19 +23,22 @@ class ConfigService:
         self.config_file = config_file or (BASE_DIR / "gateway_config.json")
         self._config: Dict[str, Any] = {}
         self._dirty: bool = True  # Start dirty to force initial load
+        self._lock = threading.Lock()
 
     def get(self) -> Dict[str, Any]:
         """Get config from cache, loading from disk if dirty."""
-        if self._dirty:
-            self._config = self._load_config()
-            self._dirty = False
-        return self._config
+        with self._lock:
+            if self._dirty:
+                self._config = self._load_config()
+                self._dirty = False
+            return self._config
 
     def update(self, new_config: Dict[str, Any]) -> None:
         """Update cache, save to disk, and mark dirty to ensure reload consistency."""
-        self._save_config(new_config)
-        self._config = new_config
-        self._dirty = False
+        with self._lock:
+            self._save_config(new_config)
+            self._config = new_config
+            self._dirty = False
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from disk with defaults and decryption."""
@@ -137,8 +143,12 @@ class ConfigService:
                 encrypted_agents.append(agent_copy)
             config_to_save["agents"] = encrypted_agents
 
-            with open(self.config_file, "w") as f:
-                json.dump(config_to_save, f, indent=2)
+            # Atomic write to prevent file corruption (CWE-367)
+            temp_dir = self.config_file.parent
+            with tempfile.NamedTemporaryFile("w", dir=temp_dir, delete=False, encoding="utf-8") as tf:
+                json.dump(config_to_save, tf, indent=2)
+                temp_file_path = tf.name
+            os.replace(temp_file_path, self.config_file)
         except Exception as e:
             logger.error(f"Failed to save config file: {str(e)}")
 

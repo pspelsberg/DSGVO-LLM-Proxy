@@ -615,6 +615,30 @@ def test_rag_isolation(client):
         client.delete(f"/api/documents/{doc_a_id}")
         client.delete(f"/api/documents/{doc_b_id}")
 
+
+def test_chat_completion_null_max_tokens(client):
+    # Verify that max_tokens: None (json null) or invalid max_tokens doesn't crash the proxy
+    payload = {
+        "model": "mock/gpt-4o",
+        "messages": [{"role": "user", "content": "Hallo Welt"}],
+        "max_tokens": None
+    }
+    response = client.post("/v1/chat/completions", json=payload)
+    assert response.status_code == 200
+    assert "choices" in response.json()
+
+
+def test_playground_length_limit(client):
+    # Verify that input text exceeding 50,000 characters fails validation
+    long_text = "a" * 50001
+    payload = {
+        "text": long_text,
+        "language": "de"
+    }
+    response = client.post("/api/analyze", json=payload)
+    assert response.status_code == 422  # Validation Error
+
+
     
 
 

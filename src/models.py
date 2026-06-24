@@ -9,7 +9,7 @@ class PIIEntity(BaseModel):
     text: str = Field(..., description="Original sensitive text value")
 
 class AnonymizeRequest(BaseModel):
-    text: str = Field(..., description="Raw input text to analyze and mask")
+    text: str = Field(..., max_length=50000, description="Raw input text to analyze and mask")
     language: str = Field("de", description="Language of input text ('de' or 'en')")
 
 class AnonymizeResponse(BaseModel):
@@ -95,6 +95,6 @@ class AuditLogItem(BaseModel):
     privacy_score: float
 
 class RAGChatRequest(BaseModel):
-    question: str
+    question: str = Field(..., max_length=50000, description="User question or prompt for RAG")
     language: str = "de"
     document_ids: Optional[List[int]] = Field(None, description="Optional list of document IDs to restrict search to")

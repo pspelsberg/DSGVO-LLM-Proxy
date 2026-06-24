@@ -1,0 +1,32 @@
+# Secrets & Keys
+.gateway_secret.key
+.gateway_hash_salt.key
+.env
+
+# Database
+gateway_logs.db
+
+# Runtime Config (contains encrypted API keys)
+gateway_config.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store

@@ -38,7 +38,10 @@ def get_fernet() -> Fernet:
         if not KEY_FILE.exists():
             key = Fernet.generate_key()
             try:
-                with open(KEY_FILE, "wb") as f:
+                # Use os.open to set file permission to 0600 on creation
+                flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+                fd = os.open(str(KEY_FILE), flags, 0o600)
+                with os.fdopen(fd, "wb") as f:
                     f.write(key)
             except Exception as e:
                 # Abort startup: a transient key would make all persisted data unrecoverable after restart
